@@ -15,8 +15,8 @@ createCommand({
     const songRequest = regexGroups ? regexGroups[2] : "";
 
     if(songRequest){
-      console.log(handlers);
-      const searchResult = await handlers.youtube.search(songRequest);
+      const handler = handlers.get("youtube");
+      const searchResult = await handler.search(songRequest);
       console.log(searchResult);
 
       await bot.helpers.addReaction(rawMessage.channelId, rawMessage.id, '🎶');

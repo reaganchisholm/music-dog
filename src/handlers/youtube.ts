@@ -1,8 +1,9 @@
 // TODO: HANDLE GETTING YOUTUBE AUDIO
-import { handlers } from './mod.ts';
-import { YouTube } from './deps.ts';
+import { createHandler } from './mod.ts';
+import { YouTube } from '../../deps.ts';
 
-handlers.youtube = () => {
+createHandler({
+    name: 'youtube',
     search: async (query: string) => {
         const results = await YouTube
             .search(query, { maxResults: 1 })
@@ -10,4 +11,4 @@ handlers.youtube = () => {
             .catch(error => { console.log(error); })
         return results;
     }
-}
+});
