@@ -4,3 +4,5 @@ dotEnvConfig({ export: true });
 
 export const BOT_TOKEN = Deno.env.get("BOT_TOKEN") || "";
 export const BOT_ID = BigInt(atob(BOT_TOKEN.split(".")[0]));
+export const BOT_PREFIX = Deno.env.get("BOT_PREFIX") || "!";
+export const COMMAND_REGEX = new RegExp(`(${BOT_PREFIX}.) (.+)`);

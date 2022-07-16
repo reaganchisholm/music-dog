@@ -1,4 +1,4 @@
-import { ActivityTypes, createBot, enableCachePlugin, enableCacheSweepers, fastFileLoader, startBot } from "./deps.ts";
+import { GatewayIntents, ActivityTypes, createBot, enableCachePlugin, enableCacheSweepers, fastFileLoader, startBot } from "./deps.ts";
 import { BOT_ID, BOT_TOKEN } from "./configs.ts";
 import { logger } from "./src/utils/logger.ts";
 import { events } from "./src/events/mod.ts";
@@ -15,14 +15,11 @@ await fastFileLoader(paths).catch((err) => {
   Deno.exit(1);
 });
 
-log.info("BOT_TOKEN: ", BOT_TOKEN);
-log.info("BOT_ID: ", BOT_ID);
-
 export const bot = enableCachePlugin(
   createBot({
     token: BOT_TOKEN,
     botId: BOT_ID,
-    intents: [],
+    intents: [ "Guilds", "GuildMessages", "MessageContent" ],
     events,
   }),
 );

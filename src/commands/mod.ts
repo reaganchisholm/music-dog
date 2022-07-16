@@ -1,4 +1,4 @@
-import { ApplicationCommandOption, ApplicationCommandTypes, Bot, Collection, Interaction } from "../../deps.ts";
+import { ApplicationCommandOption, Bot, Collection, Message } from "../../deps.ts";
 
 export type subCommand = Omit<Command, "subcommands">;
 export type subCommandGroup = {
@@ -8,17 +8,18 @@ export type subCommandGroup = {
 export interface Command {
   name: string;
   description: string;
+  alias?: string[];
   usage?: string[];
   options?: ApplicationCommandOption[];
-  type: ApplicationCommandTypes;
-  /** Defaults to `Guild` */
-  scope?: "Global" | "Guild";
-  execute: (bot: Bot, interaction: Interaction) => unknown;
+  execute: (bot: Bot, message: Message) => unknown;
   subcommands?: Array<subCommandGroup | subCommand>;
 }
 
 export const commands = new Collection<string, Command>();
 
 export function createCommand(command: Command) {
+  // Setup command 
   commands.set(command.name, command);
+  // Setup alias commands
+  command.alias?.forEach((alias) => commands.set(alias, command));
 }
