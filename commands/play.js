@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { connectToChannel } from "../helpers/connect-to-channel";
-import { player } from '../globals';
-import { playSong } from "../helpers/play-song";
+import { connectToChannel } from "../helpers/connectToChannel";
+import { player, setupPlayerEvents } from '../globals';
+import { playSong } from "../helpers/playSong";
 
 export const command = {
 	data: new SlashCommandBuilder()
@@ -21,27 +21,28 @@ export const command = {
 		// Check if user is in a voice channel
 		if(voiceChannel) {
 			try {
-				const connection = await connectToChannel(voiceChannel);
+				let connection = await connectToChannel(voiceChannel);
+
+				if(connection){
+					setupPlayerEvents(connection);
+				}
 
 				/**
-				 * We have successfully connected! Now we can subscribe our connection to
-				 * the player. This means that the player will play audio in the user's
-				 * voice channel.
-				 */
+				 We have successfully connected! Now we can subscribe our connection to the player. This means that the player will play audio in the user's voice channel.
+				*/
 				connection.subscribe(player);
 
 				/**
-				 * Try to get our song ready to play for when the bot joins a voice channel
+				 Try to get our song ready to play for when the bot joins a voice channel
 				 */
 				try {
 					await playSong();
-					console.log('Song is ready to play!');
 				} catch (error) {
 					/**
-					 * The song isn't ready to play for some reason :(
+					 The song isn't ready to play for some reason :(
 					 */
 					console.error(error);
-					}
+				}
 
 				await interaction.reply('Playing now!');
 			} catch (error) {

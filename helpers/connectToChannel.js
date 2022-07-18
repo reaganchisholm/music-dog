@@ -28,6 +28,7 @@ export async function connectToChannel(channel) {
 		 * an error is thrown.
 		 */
 		await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
+
 		/**
 		 * At this point, the voice connection is ready within 30 seconds! This means we can
 		 * start playing audio in the voice channel. We return the connection so it can be
