@@ -5,23 +5,21 @@ import { createAudioPlayer, AudioPlayerStatus, getVoiceConnection } from '@disco
  */
 export const player = createAudioPlayer();
 
-export function setupPlayerEvents(connection){
-    let disconnectTimeout;
-    let disconnectTimeoutInSeconds = 60;
+let disconnectTimeout;
+let disconnectTimeoutInSeconds = 50;
 
-    player.on(AudioPlayerStatus.Playing, () => {
-        if(disconnectTimeout){
-            console.log("Cleaning timeout");
-            clearTimeout(disconnectTimeout)
-        }
-    });
+player.on(AudioPlayerStatus.Playing, () => {
+    // if(disconnectTimeout){
+    //     console.log("Cleaning timeout");
+    //     clearTimeout(disconnectTimeout)
+    // }
+});
 
-    player.on(AudioPlayerStatus.Idle, () => {
-        console.log("Idle disconnecting in " + disconnectTimeoutInSeconds * 1000 + " seconds");
-        disconnectTimeout = setTimeout(() => {
-            console.log("Disconnecting");
-            console.log(connection);
-            connection.disconnect();
-        }, disconnectTimeoutInSeconds * 1000);
-    });
-};
+player.on(AudioPlayerStatus.Idle, () => {
+    // const connection = getVoiceConnection(guildId);
+
+    // disconnectTimeout = setTimeout(() => {
+        // console.log('Disconnecting');
+        // connection.disconnect();
+    // }, disconnectTimeoutInSeconds * 1000);
+});

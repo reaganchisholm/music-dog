@@ -4,7 +4,6 @@ import path from 'node:path';
 import { Client, Intents, Collection } from 'discord.js';
 import 'dotenv/config'
 import { playSong } from './helpers/playSong';
-import { setupPlayerEvents } from "./globals";
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
@@ -32,18 +31,6 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
 	console.log('Ready!');
-	/**
-	 * Try to get our song ready to play for when the bot joins a voice channel
-	 */
-	 try {
-		await playSong();
-		console.log('Song is ready to play!');
-	} catch (error) {
-		/**
-		 * The song isn't ready to play for some reason :(
-		 */
-		console.error(error);
-	}
 });
 
 const eventsPath = path.join(__dirname, 'events');
