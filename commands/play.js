@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { connectToChannel } from "../helpers/connectToChannel";
-import { player } from '../globals';
-import { playSong } from "../helpers/playSong";
+import { player, setupEvents } from '../globals';
 import { queue } from "../queue";
+import { handlers } from "../handlers";
 
 export const command = {
 	data: new SlashCommandBuilder()
@@ -18,6 +18,11 @@ export const command = {
 		const guild = interaction.client.guilds.cache.get(interaction.guildId)
 		const member = guild.members.cache.get(interaction.member.user.id);
 		const voiceChannel = member.voice.channel;
+		let songRequest = interaction.options.get('song').value;
+
+		if(songRequest.includes('lyric') === false){
+			songRequest = `${songRequest} lyrics`;
+		}
 
 		// Check if user is in a voice channel
 		if(voiceChannel) {
@@ -29,20 +34,18 @@ export const command = {
 				*/
 				connection.subscribe(player);
 
-				queue.add({
-					title: 'Test',
-					song: interaction.options.song
-				});
+				setupEvents(interaction.guildId);
 
-				queue.add({
-					title: 'Test 2',
-					song: interaction.options.song
-				});
-				
-				queue.add({
-					title: 'Test 3',
-					song: interaction.options.song
-				});
+				const searchResult = await handlers.youtube.search(songRequest);
+
+				if(searchResult?.length > 0){
+					try {
+						await handlers.youtube.download(searchResult[0]);
+						queue.add(searchResult[0].title, `.cache/${searchResult[0].id}.mp4`);
+					} catch(e){ 
+						console.log(e);
+					}
+				}
 
 				if(player.state.status === 'idle'){
 					queue.play();

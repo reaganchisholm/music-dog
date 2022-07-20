@@ -1,9 +1,10 @@
-import { player } from './globals';
 import { playSong } from "./helpers/playSong";
 
-export const queue = setupQueue(player);
+// Pretty sure this won't work if the bot was being used in multiple servers, would need to make a new queue for each server
 
-function setupQueue(player){
+export const queue = setupQueue();
+
+function setupQueue(){
     let songs = [];
 
     function get(index){
@@ -16,38 +17,27 @@ function setupQueue(player){
             song,
         }
 
-        // console.log('Adding: ' + title);
         songs.push(item);
     }
 
     function remove(index){
-        console.log(songs);
         songs = songs.filter((item, i) => i !== index - 1);
-        console.log(songs);
     }
 
     async function play(){
-        console.log('Playing queue!');
-        while(songs.length > 0){
-            if(songs.length === 0){
-                console.log('Queue is empty!');
-                // No songs in queue
-                break;
-            } else if(player.state.status === 'playing'){
-                console.log(player.state.status);
-                // Currently playing a song, wait until it's done
-            } else {
-                let song = get(1); 
-                console.log("Playing: " + song.title);
-                await playSong();
-                if(song){
-                    console.log("Removing: ", song.title);
+        if(songs.length === 0){
+            // No songs in queue
+            console.log('Queue is empty!');
+        } else {
+            let song = get(1); 
+            await playSong(song);
+
+            if(song){
+                setTimeout(() => {
                     remove(1);
-                }
+                }, 5000);
             }
         }
-
-        console.log('Queue is empty!, waiting for more music');
     }
 
     return {

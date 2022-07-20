@@ -6,8 +6,8 @@ import {
 } from '@discordjs/voice';
 import { player } from '../globals';
 
-export function playSong() {
-	const resource = createAudioResource('./bark.mp3', {
+export function playSong(song) {
+	const resource = createAudioResource(`./${song.song}`, {
 		inputType: StreamType.Arbitrary,
 	});
 

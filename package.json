@@ -19,7 +19,9 @@
     "discord-api-types": "^0.36.2",
     "discord.js": "^13.8.1",
     "dotenv": "^16.0.1",
-    "sodium-native": "^3.3.0"
+    "sodium-native": "^3.3.0",
+    "youtube-sr": "^4.2.0",
+    "ytdl-core": "^4.11.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.19"

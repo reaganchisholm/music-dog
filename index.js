@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Client, Intents, Collection } from 'discord.js';
 import 'dotenv/config'
-import { playSong } from './helpers/playSong';
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
