@@ -1,9 +1,5 @@
 import { Player, Queue } from "@discordx/music";
-import {
-  Pagination,
-  PaginationResolver,
-  PaginationType,
-} from "@discordx/pagination";
+import { Pagination, PaginationResolver, PaginationType } from "@discordx/pagination";
 
 import type {
   CommandInteraction,

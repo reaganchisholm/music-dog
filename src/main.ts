@@ -24,7 +24,6 @@ export const bot = new Client({
 bot.once("ready", async () => {
     await bot.guilds.fetch();
     await bot.initApplicationCommands();
-
     console.log("Bot is ready!");
 });
 
