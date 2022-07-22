@@ -237,8 +237,8 @@ export class music {
       interaction.followUp("The song could not be found");
     } else {
       const embed = new EmbedBuilder();
-      embed.setTitle("Enqueued");
-      embed.setDescription(`Enqueued song **${song.title}****`);
+      embed.setTitle("Queued up that banger!");
+      embed.setDescription(`Banger queued: **${song.title}****`);
       interaction.followUp({ embeds: [embed] });
     }
   }
