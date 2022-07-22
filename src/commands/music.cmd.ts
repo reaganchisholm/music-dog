@@ -16,10 +16,10 @@ import { DogPlayer } from "./music.js";
 @Discord()
 
 // Create music group
-// @SlashGroup({ name: "music" })
+@SlashGroup({ name: "music" })
 
 // Assign all slashes to music group
-// @SlashGroup("music")
+@SlashGroup("music")
 
 export class music {
   player;
@@ -237,8 +237,8 @@ export class music {
       interaction.followUp("The song could not be found");
     } else {
       const embed = new EmbedBuilder();
-      embed.setTitle("Queued up that banger!");
-      embed.setDescription(`Banger queued: **${song.title}****`);
+      embed.setTitle("Enqueued");
+      embed.setDescription(`Enqueued song **${song.title}****`);
       interaction.followUp({ embeds: [embed] });
     }
   }
