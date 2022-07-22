@@ -3,6 +3,7 @@ import type { Interaction, Message } from "discord.js";
 import { dirname, importx } from "@discordx/importer";
 import { IntentsBitField } from 'discord.js';
 import { Client } from "discordx";
+import 'dotenv/config'
 
 export const bot = new Client({
     botGuilds: [(client) => client.guilds.cache.map((guild) => guild.id)],
@@ -14,9 +15,9 @@ export const bot = new Client({
         IntentsBitField.Flags.GuildVoiceStates,
     ],
     // Configuration for @SimpleCommand
-    //   simpleCommand: {
-    //     prefix: "!",
-    //   },
+    simpleCommand: {
+        prefix: "?",
+    },
 });
 
 bot.once("ready", async () => {

@@ -1,411 +1,391 @@
-import type { CommandInteraction, Guild } from "discord.js";
-import { EmbedBuilder, GuildMember } from "discord.js";
-import type { ArgsOf } from "discordx";
+import { Player, Queue } from "@discordx/music";
 import {
-  ButtonComponent,
-  Discord,
-  On,
-  Slash,
-  SlashGroup,
-  SlashOption,
-} from "discordx";
+  Pagination,
+  PaginationResolver,
+  PaginationType,
+} from "@discordx/pagination";
 
-import type { MyQueue } from "./../music.js";
-import { MyPlayer } from "./../music.js";
+import type {
+  CommandInteraction,
+  ContextMenuCommandInteraction,
+  Guild,
+  MessageActionRowComponentBuilder,
+  TextBasedChannel,
+} from "discord.js";
 
-@Discord()
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  Message,
+} from "discord.js";
 
-// Create music group
-@SlashGroup({ name: "music" })
+export class MyQueue extends Queue {
+  lastControlMessage?: Message;
+  timeoutTimer?: NodeJS.Timeout;
+  lockUpdate = false;
 
-// Assign all slashes to music group
-@SlashGroup("music")
+  get playbackMilliseconds(): number {
+    const track = this.currentTrack;
+    if (
+      !track ||
+      !track.metadata.isYoutubeTrack() ||
+      !track.metadata.info.duration
+    ) {
+      return 0;
+    }
 
-export class music {
-  player;
-
-  constructor() {
-    this.player = new MyPlayer();
+    return this.toMS(track.metadata.info.duration);
   }
 
-  @On("voiceStateUpdate")
-  voiceUpdate([oldState, newState]: ArgsOf<"voiceStateUpdate">): void {
-    const queue = this.player.getQueue(oldState.guild);
+  constructor(player: Player, guild: Guild, public channel?: TextBasedChannel) {
+    super(player, guild);
+    setInterval(() => this.updateControlMessage(), 1e4);
+    // empty constructor
+  }
 
-    if (
-      !queue.isReady ||
-      !queue.voiceChannelId ||
-      (oldState.channelId != queue.voiceChannelId &&
-        newState.channelId != queue.voiceChannelId) ||
-      !queue.channel
-    ) {
-      return;
-    }
+  public fromMS(duration: number): string {
+    const seconds = Math.floor((duration / 1e3) % 60);
+    const minutes = Math.floor((duration / 6e4) % 60);
+    const hours = Math.floor(duration / 36e5);
+    const secondsPad = `${seconds}`.padStart(2, "0");
+    const minutesPad = `${minutes}`.padStart(2, "0");
+    const hoursPad = `${hours}`.padStart(2, "0");
+    return `${hours ? `${hoursPad}:` : ""}${minutesPad}:${secondsPad}`;
+  }
 
-    const channel =
-      oldState.channelId === queue.voiceChannelId
-        ? oldState.channel
-        : newState.channel;
+  public toMS(duration: string): number {
+    const milliseconds =
+      duration
+        .split(":")
+        .reduceRight(
+          (prev, curr, i, arr) =>
+            prev + parseInt(curr) * Math.pow(60, arr.length - 1 - i),
+          0
+        ) * 1e3;
 
-    if (!channel) {
-      return;
-    }
+    return milliseconds ? milliseconds : 0;
+  }
 
-    const totalMembers = channel.members.filter((m) => !m.user.bot);
+  private controlsRow(): ActionRowBuilder<MessageActionRowComponentBuilder>[] {
+    const nextButton = new ButtonBuilder()
+      .setLabel("Next")
+      .setEmoji("⏭")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(!this.isPlaying)
+      .setCustomId("btn-next");
 
-    if (queue.isPlaying && !totalMembers.size) {
-      queue.pause();
-      queue.channel.send(
-        "> To save resources, I have paused the queue since everyone has left my voice channel."
+    const pauseButton = new ButtonBuilder()
+      .setLabel(this.isPlaying ? "Pause" : "Resume")
+      .setEmoji(this.isPlaying ? "⏸️" : "▶️")
+      .setStyle(ButtonStyle.Primary)
+      .setCustomId("btn-pause");
+
+    const stopButton = new ButtonBuilder()
+      .setLabel("Stop")
+      .setStyle(ButtonStyle.Danger)
+      .setCustomId("btn-leave");
+
+    const repeatButton = new ButtonBuilder()
+      .setLabel("Repeat")
+      .setEmoji("🔂")
+      .setDisabled(!this.isPlaying)
+      .setStyle(this.repeat ? ButtonStyle.Danger : ButtonStyle.Primary)
+      .setCustomId("btn-repeat");
+
+    const loopButton = new ButtonBuilder()
+      .setLabel("Loop")
+      .setEmoji("🔁")
+      .setDisabled(!this.isPlaying)
+      .setStyle(this.loop ? ButtonStyle.Danger : ButtonStyle.Primary)
+      .setCustomId("btn-loop");
+
+    const row1 =
+      new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+        stopButton,
+        pauseButton,
+        nextButton,
+        repeatButton,
+        loopButton
       );
 
-      if (queue.timeoutTimer) {
-        clearTimeout(queue.timeoutTimer);
+    const queueButton = new ButtonBuilder()
+      .setLabel("Queue")
+      .setEmoji("🎵")
+      .setStyle(ButtonStyle.Primary)
+      .setCustomId("btn-queue");
+
+    const mixButton = new ButtonBuilder()
+      .setLabel("Shuffle")
+      .setEmoji("🎛️")
+      .setDisabled(!this.isPlaying)
+      .setStyle(ButtonStyle.Primary)
+      .setCustomId("btn-mix");
+
+    const controlsButton = new ButtonBuilder()
+      .setLabel("Controls")
+      .setEmoji("🔄")
+      .setStyle(ButtonStyle.Primary)
+      .setCustomId("btn-controls");
+
+    const row2 =
+      new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+        queueButton,
+        mixButton,
+        controlsButton
+      );
+
+    return [row1, row2];
+  }
+
+  public async updateControlMessage(options?: {
+    force?: boolean;
+    text?: string;
+  }): Promise<void> {
+    if (this.lockUpdate) {
+      return;
+    }
+    this.lockUpdate = true;
+    const embed = new EmbedBuilder();
+    embed.setTitle("🐶");
+    const currentTrack = this.currentTrack;
+    const nextTrack = this.nextTrack;
+    if (!currentTrack) {
+      if (this.lastControlMessage) {
+        await this.lastControlMessage.delete();
+        this.lastControlMessage = undefined;
       }
-
-      queue.timeoutTimer = setTimeout(() => {
-        queue.channel?.send(
-          "> My voice channel has been open for 5 minutes and no one has joined, so the queue has been deleted."
-        );
-        queue.leave();
-      }, 5 * 60 * 1000);
-    } else if (queue.isPause && totalMembers.size) {
-      if (queue.timeoutTimer) {
-        clearTimeout(queue.timeoutTimer);
-        queue.timeoutTimer = undefined;
-      }
-      queue.resume();
-      queue.channel.send(
-        "> There has been a new participant in my voice channel, and the queue will be resumed. Enjoy the music 🎶"
-      );
-    }
-  }
-
-  validateControlInteraction(
-    interaction: CommandInteraction
-  ): MyQueue | undefined {
-    if (
-      !interaction.guild ||
-      !interaction.channel ||
-      !(interaction.member instanceof GuildMember)
-    ) {
-      interaction.reply(
-        "> Your request could not be processed, please try again later"
-      );
+      this.lockUpdate = false;
       return;
     }
+    const user = currentTrack.metadata.isYoutubeTrack()
+      ? currentTrack.metadata.options?.user
+      : currentTrack.metadata?.user;
 
-    const queue = this.player.getQueue(interaction.guild, interaction.channel);
-
-    if (interaction.member.voice.channelId !== queue.voiceChannelId) {
-      interaction.reply(
-        "> To use the controls, you need to join the bot voice channel"
-      );
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
-      return;
-    }
-
-    return queue;
-  }
-
-  @ButtonComponent("btn-next")
-  async nextControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.skip();
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  @ButtonComponent("btn-pause")
-  async pauseControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.isPause ? queue.resume() : queue.pause();
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  @ButtonComponent("btn-leave")
-  async leaveControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.leave();
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  @ButtonComponent("btn-repeat")
-  async repeatControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.setRepeat(!queue.repeat);
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  @ButtonComponent("btn-queue")
-  queueControl(interaction: CommandInteraction): void {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.view(interaction);
-  }
-
-  @ButtonComponent("btn-mix")
-  async mixControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.mix();
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  @ButtonComponent("btn-controls")
-  async controlsControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.updateControlMessage({ force: true });
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  async processJoin(
-    interaction: CommandInteraction
-  ): Promise<MyQueue | undefined> {
-    if (
-      !interaction.guild ||
-      !interaction.channel ||
-      !(interaction.member instanceof GuildMember)
-    ) {
-      interaction.reply(
-        "> Your request could not be processed, please try again later"
-      );
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
-      return;
-    }
-
-    if (
-      !(interaction.member instanceof GuildMember) ||
-      !interaction.member.voice.channel
-    ) {
-      interaction.reply("> You are not in the voice channel");
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
-      return;
-    }
-
-    await interaction.deferReply();
-    const queue = this.player.getQueue(interaction.guild, interaction.channel);
-
-    if (!queue.isReady) {
-      queue.channel = interaction.channel;
-      await queue.join(interaction.member.voice.channel);
-    }
-
-    return queue;
-  }
-
-  @Slash("play", { description: "Play a song" })
-  async play(
-    @SlashOption("song", { description: "song name" })
-    songName: string,
-    interaction: CommandInteraction
-  ): Promise<void> {
-    const queue = await this.processJoin(interaction);
-    if (!queue) {
-      return;
-    }
-    const song = await queue.play(songName, { user: interaction.user });
-    if (!song) {
-      interaction.followUp("The song could not be found");
-    } else {
-      const embed = new EmbedBuilder();
-      embed.setTitle("Enqueued");
-      embed.setDescription(`Enqueued song **${song.title}****`);
-      interaction.followUp({ embeds: [embed] });
-    }
-  }
-
-  @Slash("playlist", { description: "Play a playlist" })
-  async playlist(
-    @SlashOption("playlist", { description: "playlist name" })
-    playlistName: string,
-    interaction: CommandInteraction
-  ): Promise<void> {
-    const queue = await this.processJoin(interaction);
-    if (!queue) {
-      return;
-    }
-    const songs = await queue.playlist(playlistName, {
-      user: interaction.user,
+    embed.addFields({
+      name:
+        "Now Playing" +
+        (this.size > 2 ? ` (Total: ${this.size} tracks queued)` : ""),
+      value: `[${currentTrack.metadata.title}](${
+        currentTrack.metadata.url ?? "NaN"
+      })${user ? ` by ${user}` : ""}`,
     });
-    if (!songs) {
-      interaction.followUp("The playlist could not be found");
-    } else {
-      const embed = new EmbedBuilder();
-      embed.setTitle("Enqueued");
-      embed.setDescription(`Enqueued  **${songs.length}** songs from playlist`);
-      interaction.followUp({ embeds: [embed] });
+
+    const progressBarOptions = {
+      arrow: "🔘",
+      block: "━",
+      size: 15,
+    };
+
+    if (currentTrack.metadata.isYoutubeTrack()) {
+      const { size, arrow, block } = progressBarOptions;
+      const timeNow = this.playbackDuration;
+      const timeTotal = this.playbackMilliseconds;
+
+      const progress = Math.round((size * timeNow) / timeTotal);
+      const emptyProgress = size - progress;
+
+      const progressString =
+        block.repeat(progress) + arrow + block.repeat(emptyProgress);
+
+      const bar = (this.isPlaying ? "▶️" : "⏸️") + " " + progressString;
+      const currentTime = this.fromMS(timeNow);
+      const endTime = this.fromMS(timeTotal);
+      const spacing = bar.length - currentTime.length - endTime.length;
+      const time =
+        "`" + currentTime + " ".repeat(spacing * 3 - 2) + endTime + "`";
+
+      embed.addFields({ name: bar, value: time });
     }
-  }
-
-  validateInteraction(
-    interaction: CommandInteraction
-  ): undefined | { guild: Guild; member: GuildMember; queue: MyQueue } {
-    if (
-      !interaction.guild ||
-      !(interaction.member instanceof GuildMember) ||
-      !interaction.channel
-    ) {
-      interaction.reply(
-        "> Your request could not be processed, please try again later"
-      );
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
-      return;
-    }
-
-    if (!interaction.member.voice.channel) {
-      interaction.reply(
-        "> To use the music commands, you need to join voice channel"
-      );
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
-      return;
-    }
-
-    const queue = this.player.getQueue(interaction.guild, interaction.channel);
 
     if (
-      !queue.isReady ||
-      interaction.member.voice.channel.id !== queue.voiceChannelId
+      currentTrack.metadata.isYoutubeTrack() &&
+      currentTrack.metadata.info.bestThumbnail.url
     ) {
-      interaction.reply(
-        "> To use the music commands, you need to join the bot voice channel"
+      embed.setThumbnail(currentTrack.metadata.info.bestThumbnail.url);
+    }
+
+    embed.addFields({
+      name: "Next Song",
+      value: nextTrack
+        ? `[${nextTrack.title}](${nextTrack.url})`
+        : "No upcoming song",
+    });
+
+    const pMsg = {
+      components: [...this.controlsRow()],
+      content: options?.text,
+      embeds: [embed],
+    };
+
+    if (!this.isReady && this.lastControlMessage) {
+      await this.lastControlMessage.delete();
+      this.lastControlMessage = undefined;
+      this.lockUpdate = false;
+      return;
+    }
+
+    try {
+      if (!this.lastControlMessage || options?.force) {
+        if (this.lastControlMessage) {
+          await this.lastControlMessage.delete();
+          this.lastControlMessage = undefined;
+        }
+        this.lastControlMessage = await this.channel?.send(pMsg);
+      } else {
+        await this.lastControlMessage.edit(pMsg);
+      }
+    } catch (err) {
+      // ignore
+      console.log(err);
+    }
+
+    this.lockUpdate = false;
+  }
+
+  public async view(
+    interaction: Message | CommandInteraction | ContextMenuCommandInteraction
+  ): Promise<void> {
+    const currentTrack = this.currentTrack;
+    if (!this.isReady || !currentTrack) {
+      const pMsg = await interaction.reply({
+        content: "> could not process queue atm, try later!",
+        ephemeral: true,
+      });
+      if (pMsg instanceof Message) {
+        setTimeout(() => pMsg.delete(), 3000);
+      }
+      return;
+    }
+
+    if (!this.size) {
+      const pMsg = await interaction.reply(
+        `> Playing **${currentTrack.metadata.title}**`
       );
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
+      if (pMsg instanceof Message) {
+        setTimeout(() => pMsg.delete(), 1e4);
+      }
       return;
     }
 
-    return { guild: interaction.guild, member: interaction.member, queue };
+    const current = `> Playing **${currentTrack.metadata.title}** out of ${
+      this.size + 1
+    }`;
+
+    const pageOptions = new PaginationResolver((index, paginator) => {
+      paginator.maxLength = this.size / 10;
+      if (index > paginator.maxLength) {
+        paginator.currentPage = 0;
+      }
+
+      const currentPage = paginator.currentPage;
+
+      const queue = this.tracks
+        .slice(currentPage * 10, currentPage * 10 + 10)
+        .map(
+          (track, index1) =>
+            `${currentPage * 10 + index1 + 1}. ${track.title}` +
+            `${
+              track.isYoutubeTrack() && track.info.duration
+                ? ` (${track.info.duration})`
+                : ""
+            }`
+        )
+        .join("\n\n");
+
+      return `${current}\n\`\`\`markdown\n${queue}\`\`\``;
+    }, Math.round(this.size / 10));
+
+    await new Pagination(interaction, pageOptions, {
+      enableExit: true,
+      onTimeout: (index, message) => {
+        if (message.deletable) {
+          message.delete();
+        }
+      },
+      time: 6e4,
+      type:
+        Math.round(this.size / 10) <= 5
+          ? PaginationType.Button
+          : PaginationType.SelectMenu,
+    }).send();
+  }
+}
+
+export class DogPlayer extends Player {
+  constructor() {
+    super();
+
+    this.on<MyQueue, "onStart">("onStart", ([queue]) => {
+      queue.updateControlMessage({ force: true });
+    });
+
+    this.on<MyQueue, "onFinishPlayback">("onFinishPlayback", ([queue]) => {
+      queue.leave();
+    });
+
+    this.on<MyQueue, "onPause">("onPause", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onResume">("onResume", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onError">("onError", ([queue, err]) => {
+      queue.updateControlMessage({
+        force: true,
+        text: `Error: ${err.message}`,
+      });
+    });
+
+    this.on<MyQueue, "onFinish">("onFinish", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onLoop">("onLoop", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onRepeat">("onRepeat", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onSkip">("onSkip", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onTrackAdd">("onTrackAdd", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onLoopEnabled">("onLoopEnabled", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onLoopDisabled">("onLoopDisabled", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onRepeatEnabled">("onRepeatEnabled", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onRepeatDisabled">("onRepeatDisabled", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onMix">("onMix", ([queue]) => {
+      queue.updateControlMessage();
+    });
+
+    this.on<MyQueue, "onVolumeUpdate">("onVolumeUpdate", ([queue]) => {
+      queue.updateControlMessage();
+    });
   }
 
-  @Slash("skip", { description: "skip track" })
-  skip(interaction: CommandInteraction): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
-      return;
-    }
-
-    const { queue } = validate;
-
-    queue.skip();
-    interaction.reply("> skipped current song");
-  }
-
-  @Slash("mix", { description: "mix tracks" })
-  mix(interaction: CommandInteraction): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
-      return;
-    }
-
-    const { queue } = validate;
-
-    queue.mix();
-    interaction.reply("> mixed current queue");
-  }
-
-  @Slash("pause", { description: "pause music" })
-  pause(interaction: CommandInteraction): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
-      return;
-    }
-
-    const { queue } = validate;
-
-    if (queue.isPause) {
-      interaction.reply("> already paused");
-      return;
-    }
-
-    queue.pause();
-    interaction.reply("> paused music");
-  }
-
-  @Slash("resume", { description: "resume music" })
-  resume(interaction: CommandInteraction): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
-      return;
-    }
-
-    const { queue } = validate;
-
-    if (queue.isPlaying) {
-      interaction.reply("> already playing");
-      return;
-    }
-
-    queue.resume();
-    interaction.reply("> resumed music");
-  }
-
-  @Slash("seek", { description: "seek music" })
-  seek(
-    @SlashOption("time", {
-      description: "seek time in seconds",
-    })
-    time: number,
-    interaction: CommandInteraction
-  ): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
-      return;
-    }
-
-    const { queue } = validate;
-
-    if (!queue.isPlaying || !queue.currentTrack) {
-      interaction.reply("> currently not playing any song");
-      return;
-    }
-
-    const state = queue.seek(time * 1000);
-    if (!state) {
-      interaction.reply("> could not seek");
-      return;
-    }
-    interaction.reply("> current music seeked");
-  }
-
-  @Slash("leave", { description: "stop music" })
-  leave(interaction: CommandInteraction): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
-      return;
-    }
-
-    const { queue } = validate;
-    queue.leave();
-    interaction.reply("> stopped music");
+  getQueue(guild: Guild, channel?: TextBasedChannel): MyQueue {
+    return super.queue<MyQueue>(guild, () => new MyQueue(this, guild, channel));
   }
 }
