@@ -16,15 +16,16 @@ export const bot = new Client({
     ],
     // Configuration for @SimpleCommand
     simpleCommand: {
-        prefix: "?",
+        prefix: "!",
     },
+    silent: true,
 });
 
 bot.once("ready", async () => {
     await bot.guilds.fetch();
     await bot.initApplicationCommands();
 
-    console.log("Bot started");
+    console.log("Bot is ready!");
 });
 
 bot.on("interactionCreate", (interaction: Interaction) => {
@@ -36,7 +37,7 @@ bot.on("messageCreate", (message: Message) => {
 });
 
 async function run() {
-    await importx(dirname(import.meta.url) + "/{events,commands}/**/*.{ts,js}");
+    await importx(dirname(import.meta.url) + "/{commands}/**/*.{ts,js}");
 
     if (!process.env.BOT_TOKEN) {
         throw Error("Could not find BOT_TOKEN in your environment");
