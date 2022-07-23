@@ -30,7 +30,7 @@ export class play {
         } else {
             const embed = new EmbedBuilder();
             embed.setTitle("Banger Queued");
-            embed.setDescription(`Banger queued up song **${song.title}****`);
+            embed.setDescription(`Banger queued: **${song.title}**`);
             interaction.followUp({ embeds: [embed] });
         }
     }
