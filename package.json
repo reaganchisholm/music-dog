@@ -2,7 +2,7 @@
   "name": "music-dog",
   "version": "1.0.0",
   "description": "",
-  "main": "build/main.js",
+  "main": "build/main.mjs",
   "scripts": {
     "build": "tsc && cp src/main.mjs build/main.mjs",
     "dev": "node --loader ts-node/esm/transpile-only src/main.mts",
