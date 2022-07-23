@@ -1,5 +1,5 @@
 import type { CommandInteraction } from "discord.js";
-import type { MyQueue, DogPlayer } from "./commands/music.js";
+import type { MyQueue, DogPlayer } from "./player.js";
 import { GuildMember } from "discord.js";
 
 export async function processJoin(

@@ -1,7 +1,6 @@
 import type { CommandInteraction, Guild } from "discord.js";
-import type { MyQueue } from "./../commands/music.js";
 import { GuildMember } from "discord.js";
-import { player } from "./../player.js";
+import { player, MyQueue } from "./../player.js";
 
 export function validateInteraction(
     interaction: CommandInteraction

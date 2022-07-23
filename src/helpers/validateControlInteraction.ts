@@ -1,7 +1,5 @@
 import { CommandInteraction, GuildMember } from "discord.js";
-
-import { MyQueue } from "../commands/music.js";
-import { player } from "../player.js";
+import { player, MyQueue } from "../player.js";
 
 export function validateControlInteraction(
     interaction: CommandInteraction
