@@ -1,11 +1,10 @@
-import { ArgsOf, Discord, On } from "discordx";
+import { Discord, On } from "discordx";
 import { player } from "../player.js";
 
 @Discord()
-
 class VoiceStateUpdate {
     @On("voiceStateUpdate")
-    voiceUpdate([oldState, newState]: ArgsOf<"voiceStateUpdate">): void {
+    voiceUpdate([oldState, newState]: any): void {
         const queue = player.getQueue(oldState.guild);
 
         if (

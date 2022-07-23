@@ -7,7 +7,7 @@ import 'dotenv/config'
 const __dirname = dirname(import.meta.url);
 
 export const bot = new Client({
-    // botGuilds: [(client) => client.guilds.cache.map((guild) => guild.id)],
+    botGuilds: [(client) => client.guilds.cache.map((guild) => guild.id)],
     intents: [
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMembers,
@@ -19,7 +19,6 @@ export const bot = new Client({
     simpleCommand: {
         prefix: "!",
     },
-    botGuilds: process?.env?.DEV_GUILD_ID ? [process.env.DEV_GUILD_ID] : [],
     silent: true,
 });
 
