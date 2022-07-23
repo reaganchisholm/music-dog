@@ -16,10 +16,10 @@ import { DogPlayer } from "./music.js";
 @Discord()
 
 // Create music group
-// @SlashGroup({ name: "music" })
+@SlashGroup({ name: "music" })
 
 // Assign all slashes to music group
-// @SlashGroup("music")
+@SlashGroup("music")
 
 export class music {
   player;

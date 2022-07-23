@@ -1,5 +1,4 @@
 import "reflect-metadata";
-import type { Interaction, Message } from "discord.js";
 import { dirname, importx } from "@discordx/importer";
 import { IntentsBitField } from 'discord.js';
 import { Client } from "discordx";
@@ -27,11 +26,11 @@ bot.once("ready", async () => {
     console.log("Bot is ready!");
 });
 
-bot.on("interactionCreate", (interaction: Interaction) => {
+bot.on("interactionCreate", (interaction) => {
     bot.executeInteraction(interaction);
 });
 
-bot.on("messageCreate", (message: Message) => {
+bot.on("messageCreate", (message) => {
     bot.executeCommand(message);
 });
 

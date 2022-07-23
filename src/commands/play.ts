@@ -6,6 +6,7 @@ import { processJoin } from "../join";
 import { player } from "../player";
 
 @Discord()
+
 export class play {
     @Slash("play", {
         description: "Play a song"

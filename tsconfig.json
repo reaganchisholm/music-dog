@@ -1,15 +1,18 @@
 {
-    "compilerOptions": {
-      "target": "ESNext",
-      "module": "ESNext",
-      "outDir": "./build",
-      "rootDir": "./src",
+  "compilerOptions": {
+      "module": "ESNext", // required
+      "target": "ESNext", // required
+      "noImplicitAny": true,
+      "sourceMap": true,
       "strict": true,
-      "esModuleInterop": true,
-      "moduleResolution": "Node",
-      "experimentalDecorators": true,
-      "emitDecoratorMetadata": true,
-      "skipLibCheck": false,
-      "forceConsistentCasingInFileNames": true
-    }
-  }
+      "outDir": "build",
+      "emitDecoratorMetadata": true, // required
+      "experimentalDecorators": true, // required
+      "declaration": false,
+      "importHelpers": true, // required
+      "forceConsistentCasingInFileNames": true,
+      "moduleResolution": "Node", // required
+      "esModuleInterop": true // required
+    },
+    "exclude": ["node_modules"]
+}
