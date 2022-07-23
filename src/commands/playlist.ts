@@ -2,16 +2,17 @@ import type { CommandInteraction } from "discord.js";
 import { EmbedBuilder } from "discord.js";
 import { Discord, Slash, SlashOption } from "discordx";
 
-import { player } from "./../player.js";
-import { processJoin } from "./../join.js";
+import { player } from "../player.js";
+import { processJoin } from "../join.js";
 import { IncludeControls } from "../helpers/controls.js";
 
 @Discord()
-abstract class Play extends IncludeControls {
-    @Slash("play", {
-        description: "Play a song"
+abstract class Playlist extends IncludeControls {
+    @Slash("playlist", {
+        description: "Play a playlist from youtube"
     })
-    private async play(
+
+    private async playlist(
         @SlashOption("song", {
             description: "song name"
         })
@@ -35,3 +36,4 @@ abstract class Play extends IncludeControls {
         }
     }
 }
+

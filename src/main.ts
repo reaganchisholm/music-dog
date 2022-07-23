@@ -4,8 +4,10 @@ import { IntentsBitField } from 'discord.js';
 import { Client } from "discordx";
 import 'dotenv/config'
 
+const __dirname = dirname(import.meta.url);
+
 export const bot = new Client({
-    botGuilds: [(client) => client.guilds.cache.map((guild) => guild.id)],
+    // botGuilds: [(client) => client.guilds.cache.map((guild) => guild.id)],
     intents: [
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMembers,
@@ -17,6 +19,7 @@ export const bot = new Client({
     simpleCommand: {
         prefix: "!",
     },
+    botGuilds: process?.env?.DEV_GUILD_ID ? [process.env.DEV_GUILD_ID] : [],
     silent: true,
 });
 
@@ -35,7 +38,7 @@ bot.on("messageCreate", (message) => {
 });
 
 async function run() {
-    await importx(dirname(import.meta.url) + "/{commands}/**/*.{ts,js}");
+    await importx(dirname(import.meta.url) + "/{events,commands}/**/*.{ts,js}");
 
     if (!process.env.BOT_TOKEN) {
         throw Error("Could not find BOT_TOKEN in your environment");

@@ -1,4 +1,3 @@
-
 import type { CommandInteraction } from "discord.js";
 import type { MyQueue, DogPlayer } from "./commands/music.js";
 import { GuildMember } from "discord.js";

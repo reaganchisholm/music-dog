@@ -2,6 +2,6 @@ version: "3"
 services:
   app:
     build: .
-    command: node build/main.mjs
+    command: node build/main.js
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
