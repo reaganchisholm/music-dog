@@ -16,7 +16,7 @@ export const bot = new Client({
     ],
     // Configuration for @SimpleCommand
     simpleCommand: {
-        prefix: "-",
+        prefix: process.env.BOT_PREFIX,
     },
     silent: true,
 });

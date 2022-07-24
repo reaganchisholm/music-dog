@@ -1,11 +1,10 @@
-import type { CommandInteraction, Message } from "discord.js";
+import 'dotenv/config'
+import { Discord, SimpleCommand, SimpleCommandOption } from "discordx";
 import { EmbedBuilder } from "discord.js";
-import { Discord, SimpleCommand, SimpleCommandMessage, SimpleCommandOption } from "discordx";
 
 import { player } from "./../player.js";
-import { processJoin, processMessageJoin } from "./../join.js";
+import { processMessageJoin } from "./../join.js";
 import { IncludeControls } from "../helpers/controls.js";
-import { bot } from "../main.js";
 
 @Discord()
 abstract class Play extends IncludeControls {
@@ -18,7 +17,6 @@ abstract class Play extends IncludeControls {
         command: string,
         rawMessage: any 
     ): Promise<void> {
-
         const queue = await processMessageJoin(rawMessage.message, player);
 
         // No queue, do nothing
