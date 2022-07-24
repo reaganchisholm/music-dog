@@ -25,7 +25,7 @@ abstract class Play extends IncludeControls {
         if (!queue) { return }
 
         const commandRegex = new RegExp(`(${process.env.BOT_PREFIX}.) (.+)`);
-        const regexGroups = commandRegex.exec(rawMessage.content);
+        const regexGroups = commandRegex.exec(rawMessage.message.content);
         let songRequest = regexGroups ? regexGroups[2] : "";
 
         // We add lyrics to try and avoid music videos

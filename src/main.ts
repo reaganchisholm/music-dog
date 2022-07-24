@@ -3,7 +3,6 @@ import { dirname, importx } from "@discordx/importer";
 import { IntentsBitField } from 'discord.js';
 import { Client } from "discordx";
 import 'dotenv/config'
-import { IncludeControls } from "./helpers/controls";
 
 export const bot = new Client({
     botGuilds: [(client) => client.guilds.cache.map((guild) => guild.id)],
