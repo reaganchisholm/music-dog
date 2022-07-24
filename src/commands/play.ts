@@ -1,6 +1,6 @@
 import type { CommandInteraction } from "discord.js";
 import { EmbedBuilder } from "discord.js";
-import { Discord, SimpleCommand, Slash, SlashOption } from "discordx";
+import { Discord, Slash, SlashOption } from "discordx";
 
 import { player } from "./../player.js";
 import { processJoin } from "./../join.js";
@@ -9,9 +9,6 @@ import { IncludeControls } from "../helpers/controls.js";
 @Discord()
 abstract class Play extends IncludeControls {
     @Slash("play", {
-        description: "Play a song"
-    })
-    @SimpleCommand("play", {
         description: "Play a song"
     })
     private async play(

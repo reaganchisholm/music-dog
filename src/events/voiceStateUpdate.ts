@@ -1,4 +1,5 @@
-import { Discord, On, ArgsOf } from "discordx";
+import type { ArgsOf } from "discordx";
+import { Discord, On } from "discordx";
 import { player } from "../player.js";
 
 @Discord()
