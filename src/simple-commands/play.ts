@@ -8,12 +8,8 @@ import { IncludeControls } from "../helpers/controls.js";
 
 @Discord()
 abstract class Play extends IncludeControls {
-    @SimpleCommand("play", {
-        description: "Play a song",
-        aliases: ["p"]
-    })
+    @SimpleCommand({ aliases: ["p"], name: "play" })
     private async play(
-        @SimpleCommandOption("name", { type: 0 })
         command: string,
         rawMessage: any 
     ): Promise<void> {

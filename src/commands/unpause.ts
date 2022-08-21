@@ -5,7 +5,10 @@ import { validateInteraction } from "../helpers/validateInteraction.js";
 
 @Discord()
 class Unpause {
-    @Slash("unpause", { description: "Unpause music" })
+    @Slash({ 
+        name: "unpause",
+        description: "Unpause music" 
+    })
     unpause(interaction: CommandInteraction): void {
         const validate = validateInteraction(interaction);
 

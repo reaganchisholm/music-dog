@@ -8,12 +8,14 @@ import { IncludeControls } from "../helpers/controls.js";
 
 @Discord()
 abstract class Playlist extends IncludeControls {
-    @Slash("playlist", {
+    @Slash({
+        name: "playlist",
         description: "Play a playlist from youtube"
     })
 
     private async playlist(
-        @SlashOption("song", {
+        @SlashOption({
+            name: "song",
             description: "song name"
         })
         songName: string,

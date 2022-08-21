@@ -5,7 +5,8 @@ import { validateInteraction } from "./../helpers/validateInteraction.js";
 
 @Discord()
 class Shuffle {
-    @Slash("shuffle", { 
+    @Slash({ 
+        name: "shuffle",
         description: "Shuffle the current music queue" 
     })
     shuffle(interaction: CommandInteraction): void {

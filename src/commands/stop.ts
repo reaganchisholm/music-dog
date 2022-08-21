@@ -4,7 +4,8 @@ import { validateInteraction } from "../helpers/validateInteraction.js";
 
 @Discord()
 class Stop {
-    @Slash("stop", {
+    @Slash({
+        name: "stop",
         description: "Stop playing music"
     })
     stop(interaction: CommandInteraction): void {
